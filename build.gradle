@@ -1,22 +1,103 @@
-plugins {
-	id 'java'
-	id 'org.springframework.boot' version '2.7.8'
-	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+//plugins {
+//	id 'java'
+//	id 'org.springframework.boot' version '2.7.8'
+//	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+//}
+//
+//group = 'com.practice'
+//version = '0.0.1-SNAPSHOT'
+//sourceCompatibility = '11'
+//
+//repositories {
+//	mavenCentral()
+//}
+//
+//dependencies {
+//	implementation 'org.springframework.boot:spring-boot-starter'
+//	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+//}
+//
+//tasks.named('test') {
+//	useJUnitPlatform()
+//}
+
+
+buildscript {
+	ext {
+		spring = "2.7.8"
+		boot = "org.springframework.boot"  // 반복해서 쓰는 단어라서 변수로 잡음
+		lombok = "org.projectlombok:lombok"
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("$boot:spring-boot-gradle-plugin:$spring")  // 스프링부트를 gradle로 빌드할 때 쓰는 라이브러리
+	}
 }
 
-group = 'com.practice'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
-
-repositories {
-	mavenCentral()
+allprojects {
+	// 모든 프로젝트에서 공통적으로 쓸 그룹 id와 버전 id
+	group = "com.sp.sc"
+	version = "1.0.0"
 }
 
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+subprojects {
+	apply plugin: "java"  // 소스 폴더와 리소스 폴더를 잡아주는 자바 플러그인
+	apply plugin: boot
+	apply plugin: "io.spring.dependency-management"
+	apply plugin: "idea"
+
+	repositories {
+		mavenCentral()
+	}
+
+	configurations {
+		developmentOnly
+		runtimeClasspath {
+			extendsFrom developmentOnly
+		}
+	}
+
+	dependencies {
+		// 모든 모듈 공통으로 사용할 의존성들
+//		developmentOnly("$boot:spring-boot-devtools")
+		implementation "$boot:spring-boot-starter-security"
+		implementation 'com.fasterxml.jackson.core:jackson-annotations'
+
+		compileOnly lombok
+		testCompileOnly lombok
+		annotationProcessor lombok
+		testAnnotationProcessor lombok
+
+		testImplementation "$boot:spring-boot-starter-test"
+	}
+
+	test {
+		useJUnitPlatform()
+	}
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+// comp, web 모듈에는 스프링부트를 start 시키는 애플리케이션을 두지 않을 것이기 때문에 빌드시 bootJar를 꺼둔다.
+["comp", "web"].each {
+	def subProjectDir = new File(projectDir, it)
+	subProjectDir.eachDir {dir->
+		def projectName = ":${it}-${dir.name}"
+		project(projectName){
+			bootJar.enabled(false)
+			jar.enabled(true)
+		}
+	}
 }
+
+// 반대로 server 모듈에는 실행 애플리케이션을 둘 것이기 때문에 활성화 시켜준다.
+["server"].each {
+	def subProjectDir = new File(projectDir, it)
+	subProjectDir.eachDir {dir->
+		def projectName = ":${it}-${dir.name}"
+		project(projectName){
+		}
+	}
+}
+
+help.enabled(false)

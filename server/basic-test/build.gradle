@@ -1,0 +1,7 @@
+
+
+dependencies {
+    implementation("$boot:spring-boot-starter-web")
+    implementation project(path: ':comp-common-utils')  // comp 모듈의 객체를 레퍼런스 하기 위해 연결
+}
+
